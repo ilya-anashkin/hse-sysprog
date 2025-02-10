@@ -8,20 +8,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 struct ctx_send {
-	struct coro_bus *bus;
+	struct coro_bus* bus;
 	int channel;
 	unsigned data;
 	int rc;
 	enum coro_bus_error_code err;
 	bool is_started;
 	bool is_done;
-	struct coro *worker;
+	struct coro* worker;
 };
 
-static void *
-send_f(void *arg)
+static void*
+send_f(void* arg)
 {
-	struct ctx_send *ctx = arg;
+	struct ctx_send* ctx = arg;
 	ctx->is_started = true;
 	ctx->rc = coro_bus_send(ctx->bus, ctx->channel, ctx->data);
 	ctx->err = coro_bus_errno();
@@ -30,7 +30,7 @@ send_f(void *arg)
 }
 
 static void
-send_start(struct ctx_send *ctx, struct coro_bus *bus, int channel,
+send_start(struct ctx_send* ctx, struct coro_bus* bus, int channel,
 	unsigned data)
 {
 	ctx->bus = bus;
@@ -44,7 +44,7 @@ send_start(struct ctx_send *ctx, struct coro_bus *bus, int channel,
 }
 
 static int
-send_join(struct ctx_send *ctx)
+send_join(struct ctx_send* ctx)
 {
 	unit_assert(coro_join(ctx->worker) == NULL);
 	unit_assert(ctx->is_done);
@@ -55,20 +55,20 @@ send_join(struct ctx_send *ctx)
 ////////////////////////////////////////////////////////////////////////////////
 
 struct ctx_recv {
-	struct coro_bus *bus;
+	struct coro_bus* bus;
 	int channel;
-	unsigned *data;
+	unsigned* data;
 	int rc;
 	enum coro_bus_error_code err;
 	bool is_started;
 	bool is_done;
-	struct coro *worker;
+	struct coro* worker;
 };
 
-static void *
-recv_f(void *arg)
+static void*
+recv_f(void* arg)
 {
-	struct ctx_recv *ctx = arg;
+	struct ctx_recv* ctx = arg;
 	ctx->is_started = true;
 	ctx->rc = coro_bus_recv(ctx->bus, ctx->channel, ctx->data);
 	ctx->err = coro_bus_errno();
@@ -77,8 +77,8 @@ recv_f(void *arg)
 }
 
 static void
-recv_start(struct ctx_recv *ctx, struct coro_bus *bus, int channel,
-	unsigned *data)
+recv_start(struct ctx_recv* ctx, struct coro_bus* bus, int channel,
+	unsigned* data)
 {
 	ctx->bus = bus;
 	ctx->channel = channel;
@@ -91,7 +91,7 @@ recv_start(struct ctx_recv *ctx, struct coro_bus *bus, int channel,
 }
 
 static int
-recv_join(struct ctx_recv *ctx)
+recv_join(struct ctx_recv* ctx)
 {
 	unit_assert(coro_join(ctx->worker) == NULL);
 	unit_assert(ctx->is_done);
@@ -105,7 +105,7 @@ static void
 test_basic(void)
 {
 	unit_test_start();
-	struct coro_bus *bus = coro_bus_new();
+	struct coro_bus* bus = coro_bus_new();
 	int c1 = coro_bus_channel_open(bus, 5);
 	unit_check(c1 >= 0, "channel is open");
 
@@ -125,7 +125,7 @@ static void
 test_channel_reopen(void)
 {
 	unit_test_start();
-	struct coro_bus *bus = coro_bus_new();
+	struct coro_bus* bus = coro_bus_new();
 
 	unit_msg("open a channel, use it, and close");
 	int c1 = coro_bus_channel_open(bus, 2);
@@ -192,7 +192,7 @@ static void
 test_multiple_channels(void)
 {
 	unit_test_start();
-	struct coro_bus *bus = coro_bus_new();
+	struct coro_bus* bus = coro_bus_new();
 
 	unit_msg("create channels");
 	int c1 = coro_bus_channel_open(bus, 2);
@@ -256,7 +256,7 @@ static void
 test_send_basic(void)
 {
 	unit_test_start();
-	struct coro_bus *bus = coro_bus_new();
+	struct coro_bus* bus = coro_bus_new();
 
 	unit_msg("channel never existed");
 	unit_assert(coro_bus_send(bus, 0, 123) != 0);
@@ -315,7 +315,7 @@ static void
 test_send_blocking(void)
 {
 	unit_test_start();
-	struct coro_bus *bus = coro_bus_new();
+	struct coro_bus* bus = coro_bus_new();
 	int c1 = coro_bus_channel_open(bus, 3);
 	unit_assert(c1 >= 0);
 
@@ -356,7 +356,7 @@ static void
 test_send_blocking_recv_many(void)
 {
 	unit_test_start();
-	struct coro_bus *bus = coro_bus_new();
+	struct coro_bus* bus = coro_bus_new();
 	const unsigned limit = 3;
 	int c1 = coro_bus_channel_open(bus, limit);
 	unit_assert(c1 >= 0);
@@ -401,7 +401,7 @@ static void
 test_recv_basic(void)
 {
 	unit_test_start();
-	struct coro_bus *bus = coro_bus_new();
+	struct coro_bus* bus = coro_bus_new();
 
 	unit_msg("channel never existed");
 	unsigned data;
@@ -469,7 +469,7 @@ static void
 test_recv_blocking(void)
 {
 	unit_test_start();
-	struct coro_bus *bus = coro_bus_new();
+	struct coro_bus* bus = coro_bus_new();
 	int c1 = coro_bus_channel_open(bus, 3);
 	unit_assert(c1 >= 0);
 
@@ -500,7 +500,7 @@ static void
 test_recv_blocking_send_many(void)
 {
 	unit_test_start();
-	struct coro_bus *bus = coro_bus_new();
+	struct coro_bus* bus = coro_bus_new();
 	const unsigned limit = 3;
 	int c1 = coro_bus_channel_open(bus, limit);
 	unit_assert(c1 >= 0);
@@ -544,16 +544,16 @@ test_recv_blocking_send_many(void)
 ////////////////////////////////////////////////////////////////////////////////
 
 struct ctx_stress_send {
-	struct coro_bus *bus;
+	struct coro_bus* bus;
 	int channel;
 	unsigned next_data;
 	unsigned last_data;
 };
 
-static void *
-stress_send_f(void *arg)
+static void*
+stress_send_f(void* arg)
 {
-	struct ctx_stress_send *ctx = arg;
+	struct ctx_stress_send* ctx = arg;
 	while (ctx->next_data < ctx->last_data) {
 		unit_assert(coro_bus_send(ctx->bus, ctx->channel,
 			ctx->next_data++) == 0);
@@ -562,17 +562,17 @@ stress_send_f(void *arg)
 }
 
 struct ctx_stress_recv {
-	struct coro_bus *bus;
+	struct coro_bus* bus;
 	int channel;
-	unsigned *datas;
+	unsigned* datas;
 	int capacity;
 	int size;
 };
 
-static void *
-stress_recv_f(void *arg)
+static void*
+stress_recv_f(void* arg)
 {
-	struct ctx_stress_recv *ctx = arg;
+	struct ctx_stress_recv* ctx = arg;
 	while (ctx->size < ctx->capacity) {
 		unit_assert(coro_bus_recv(ctx->bus, ctx->channel,
 			&ctx->datas[ctx->size++]) == 0);
@@ -581,15 +581,15 @@ stress_recv_f(void *arg)
 }
 
 struct ctx_stress_send_recv {
-	struct coro_bus *bus;
-	struct coro *worker;
+	struct coro_bus* bus;
+	struct coro* worker;
 	unsigned data_start;
 };
 
-static void *
-stress_send_recv_f(void *arg)
+static void*
+stress_send_recv_f(void* arg)
 {
-	struct ctx_stress_send_recv *ctx = arg;
+	struct ctx_stress_send_recv* ctx = arg;
 
 	const unsigned limit = 10;
 	const unsigned data_count = 1234;
@@ -602,7 +602,7 @@ stress_send_recv_f(void *arg)
 	ctx_send.channel = c1;
 	ctx_send.next_data = ctx->data_start;
 	ctx_send.last_data = ctx->data_start + data_count;
-	struct coro *sender = coro_new(stress_send_f, &ctx_send);
+	struct coro* sender = coro_new(stress_send_f, &ctx_send);
 
 	unit_msg("start receiver");
 	unsigned datas[data_count];
@@ -612,7 +612,7 @@ stress_send_recv_f(void *arg)
 	ctx_recv.datas = datas;
 	ctx_recv.capacity = data_count;
 	ctx_recv.size = 0;
-	struct coro *receiver = coro_new(stress_recv_f, &ctx_recv);
+	struct coro* receiver = coro_new(stress_recv_f, &ctx_recv);
 
 	unit_msg("join the sender and receiver");
 	unit_assert(coro_join(sender) == NULL);
@@ -630,12 +630,12 @@ static void
 test_stress_send_recv_concurrent(void)
 {
 	unit_test_start();
-	struct coro_bus *bus = coro_bus_new();
+	struct coro_bus* bus = coro_bus_new();
 	const unsigned worker_count = 5;
 	struct ctx_stress_send_recv contexts[worker_count];
 	unit_msg("start workers");
 	for (unsigned i = 0; i < worker_count; ++i) {
-		struct ctx_stress_send_recv *ctx = &contexts[i];
+		struct ctx_stress_send_recv* ctx = &contexts[i];
 		ctx->bus = bus;
 		ctx->worker = coro_new(stress_send_recv_f, ctx);
 		ctx->data_start = i * 10;
@@ -653,7 +653,7 @@ static void
 test_send_recv_very_many(void)
 {
 	unit_test_start();
-	struct coro_bus *bus = coro_bus_new();
+	struct coro_bus* bus = coro_bus_new();
 	const unsigned limit = 500;
 	int c1 = coro_bus_channel_open(bus, limit);
 	unit_assert(c1 >= 0);
@@ -665,7 +665,7 @@ test_send_recv_very_many(void)
 	ctx.channel = c1;
 	ctx.next_data = 0;
 	ctx.last_data = data_count;
-	struct coro *sender = coro_new(stress_send_f, &ctx);
+	struct coro* sender = coro_new(stress_send_f, &ctx);
 
 	unit_msg("receive");
 	for (unsigned i = 0; i < data_count; ++i) {
@@ -686,7 +686,7 @@ static void
 test_wakeup_on_close(void)
 {
 	unit_test_start();
-	struct coro_bus *bus = coro_bus_new();
+	struct coro_bus* bus = coro_bus_new();
 
 	unit_msg("open and fill a channel");
 	int c1 = coro_bus_channel_open(bus, 3);
@@ -744,7 +744,7 @@ static void
 test_close_non_empty_bus(void)
 {
 	unit_test_start();
-	struct coro_bus *bus = coro_bus_new();
+	struct coro_bus* bus = coro_bus_new();
 
 	int c1 = coro_bus_channel_open(bus, 3);
 	unit_assert(c1 >= 0);
@@ -765,19 +765,19 @@ test_close_non_empty_bus(void)
 
 #if NEED_BROADCAST
 struct ctx_broadcast {
-	struct coro_bus *bus;
+	struct coro_bus* bus;
 	unsigned data;
 	int rc;
 	enum coro_bus_error_code err;
 	bool is_started;
 	bool is_done;
-	struct coro *worker;
+	struct coro* worker;
 };
 
-static void *
-broadcast_f(void *arg)
+static void*
+broadcast_f(void* arg)
 {
-	struct ctx_broadcast *ctx = arg;
+	struct ctx_broadcast* ctx = arg;
 	ctx->is_started = true;
 	ctx->rc = coro_bus_broadcast(ctx->bus, ctx->data);
 	ctx->err = coro_bus_errno();
@@ -786,7 +786,7 @@ broadcast_f(void *arg)
 }
 
 static void
-broadcast_start(struct ctx_broadcast *ctx, struct coro_bus *bus, unsigned data)
+broadcast_start(struct ctx_broadcast* ctx, struct coro_bus* bus, unsigned data)
 {
 	ctx->bus = bus;
 	ctx->data = data;
@@ -798,7 +798,7 @@ broadcast_start(struct ctx_broadcast *ctx, struct coro_bus *bus, unsigned data)
 }
 
 static int
-broadcast_join(struct ctx_broadcast *ctx)
+broadcast_join(struct ctx_broadcast* ctx)
 {
 	unit_assert(coro_join(ctx->worker) == NULL);
 	coro_bus_errno_set(ctx->err);
@@ -811,7 +811,7 @@ test_broadcast_basic(void)
 {
 #if NEED_BROADCAST
 	unit_test_start();
-	struct coro_bus *bus = coro_bus_new();
+	struct coro_bus* bus = coro_bus_new();
 
 	unit_msg("no channels");
 	unit_assert(coro_bus_broadcast(bus, 123) != 0);
@@ -889,7 +889,7 @@ test_broadcast_blocking(void)
 {
 #if NEED_BROADCAST
 	unit_test_start();
-	struct coro_bus *bus = coro_bus_new();
+	struct coro_bus* bus = coro_bus_new();
 
 	unit_msg("create some channels full with data");
 	int c1 = coro_bus_channel_open(bus, 2);
@@ -964,10 +964,10 @@ test_send_vector_basic(void)
 {
 #if NEED_BATCH
 	unit_test_start();
-	struct coro_bus *bus = coro_bus_new();
+	struct coro_bus* bus = coro_bus_new();
 
 	unit_msg("channel never existed");
-	unsigned data3[3] = {1, 2, 3};
+	unsigned data3[3] = { 1, 2, 3 };
 	unit_assert(coro_bus_send_v(bus, 0, data3, 3) < 0);
 	unit_assert(coro_bus_errno() == CORO_BUS_ERR_NO_CHANNEL);
 	unit_assert(coro_bus_try_send_v(bus, 0, data3, 3) < 0);
@@ -1025,7 +1025,7 @@ test_send_vector_basic(void)
 	unit_assert(c1 >= 0);
 	data3[0] = 1, data3[1] = 2, data3[2] = 3;
 	unit_assert(coro_bus_send_v(bus, c1, data3, 3) == 3);
-	unsigned data4[4] = {4, 5, 6, 7};
+	unsigned data4[4] = { 4, 5, 6, 7 };
 	unit_assert(coro_bus_try_send_v(bus, c1, data4, 4) == 4);
 	for (unsigned i = 1; i <= 7; ++i)
 		unit_assert(coro_bus_recv(bus, c1, &data) == 0 && data == i);
@@ -1069,21 +1069,21 @@ test_send_vector_basic(void)
 
 #if NEED_BATCH
 struct ctx_send_v {
-	struct coro_bus *bus;
+	struct coro_bus* bus;
 	int channel;
-	const unsigned *data;
+	const unsigned* data;
 	unsigned count;
 	int rc;
 	enum coro_bus_error_code err;
 	bool is_started;
 	bool is_done;
-	struct coro *worker;
+	struct coro* worker;
 };
 
-static void *
-send_v_f(void *arg)
+static void*
+send_v_f(void* arg)
 {
-	struct ctx_send_v *ctx = arg;
+	struct ctx_send_v* ctx = arg;
 	ctx->is_started = true;
 	ctx->rc = coro_bus_send_v(ctx->bus, ctx->channel, ctx->data,
 		ctx->count);
@@ -1093,8 +1093,8 @@ send_v_f(void *arg)
 }
 
 static void
-send_v_start(struct ctx_send_v *ctx, struct coro_bus *bus, int channel,
-	const unsigned *data, unsigned count)
+send_v_start(struct ctx_send_v* ctx, struct coro_bus* bus, int channel,
+	const unsigned* data, unsigned count)
 {
 	ctx->bus = bus;
 	ctx->channel = channel;
@@ -1108,7 +1108,7 @@ send_v_start(struct ctx_send_v *ctx, struct coro_bus *bus, int channel,
 }
 
 static int
-send_v_join(struct ctx_send_v *ctx)
+send_v_join(struct ctx_send_v* ctx)
 {
 	unit_assert(coro_join(ctx->worker) == NULL);
 	unit_assert(ctx->is_done);
@@ -1122,16 +1122,16 @@ test_send_vector_blocking(void)
 {
 #if NEED_BATCH
 	unit_test_start();
-	struct coro_bus *bus = coro_bus_new();
+	struct coro_bus* bus = coro_bus_new();
 	int c1 = coro_bus_channel_open(bus, 3);
 	unit_assert(c1 >= 0);
 
 	unit_msg("fill the channel");
-	unsigned data3[3] = {1, 2, 3};
+	unsigned data3[3] = { 1, 2, 3 };
 	unit_assert(coro_bus_send_v(bus, c1, data3, 3) == 3);
 
 	unit_msg("start a blocking send-v");
-	unsigned data4[4] = {4, 5, 6, 7};
+	unsigned data4[4] = { 4, 5, 6, 7 };
 	struct ctx_send_v ctx;
 	send_v_start(&ctx, bus, c1, data4, 4);
 	coro_yield();
@@ -1160,10 +1160,10 @@ test_send_vector_blocking(void)
 ////////////////////////////////////////////////////////////////////////////////
 
 #if NEED_BATCH
-static void *
-send_v_all_f(void *arg)
+static void*
+send_v_all_f(void* arg)
 {
-	struct ctx_send_v *ctx = arg;
+	struct ctx_send_v* ctx = arg;
 	ctx->is_started = true;
 	while (ctx->count > 0) {
 		int rc = coro_bus_send_v(ctx->bus, ctx->channel, ctx->data,
@@ -1182,8 +1182,8 @@ send_v_all_f(void *arg)
 }
 
 static void
-send_v_all_start(struct ctx_send_v *ctx, struct coro_bus *bus, int channel,
-	const unsigned *data, unsigned count)
+send_v_all_start(struct ctx_send_v* ctx, struct coro_bus* bus, int channel,
+	const unsigned* data, unsigned count)
 {
 	ctx->bus = bus;
 	ctx->channel = channel;
@@ -1202,7 +1202,7 @@ test_send_vector_blocking_recv_many(void)
 {
 #if NEED_BATCH
 	unit_test_start();
-	struct coro_bus *bus = coro_bus_new();
+	struct coro_bus* bus = coro_bus_new();
 	const unsigned limit = 3;
 	int c1 = coro_bus_channel_open(bus, limit);
 	unit_assert(c1 >= 0);
@@ -1212,12 +1212,12 @@ test_send_vector_blocking_recv_many(void)
 
 	const unsigned data_per_coro = 100;
 	const unsigned data_count = coro_count * data_per_coro;
-	unsigned *data = malloc(sizeof(*data) * data_count);
+	unsigned* data = malloc(sizeof(*data) * data_count);
 	for (unsigned i = 0; i < data_count; ++i)
 		data[i] = i;
 	unit_msg("start many coros");
 	for (unsigned i = 0; i < coro_count; ++i) {
-		unsigned *data_begin = data + i * data_per_coro;
+		unsigned* data_begin = data + i * data_per_coro;
 		send_v_all_start(&ctx[i], bus, c1, data_begin, data_per_coro);
 	}
 
@@ -1229,7 +1229,7 @@ test_send_vector_blocking_recv_many(void)
 	}
 
 	unit_msg("receive all the messages");
-	bool *results = calloc(data_count, sizeof(*results));
+	bool* results = calloc(data_count, sizeof(*results));
 	for (unsigned i = 0; i < data_count; ++i) {
 		unsigned data = 0;
 		unit_assert(coro_bus_recv(bus, c1, &data) == 0);
@@ -1264,10 +1264,10 @@ test_recv_vector_basic(void)
 {
 #if NEED_BATCH
 	unit_test_start();
-	struct coro_bus *bus = coro_bus_new();
+	struct coro_bus* bus = coro_bus_new();
 
 	unit_msg("channel never existed");
-	unsigned data3[3] = {0};
+	unsigned data3[3] = { 0 };
 	unit_assert(coro_bus_recv_v(bus, 0, data3, 3) < 0);
 	unit_assert(coro_bus_errno() == CORO_BUS_ERR_NO_CHANNEL);
 	unit_assert(coro_bus_try_recv_v(bus, 0, data3, 3) < 0);
@@ -1327,7 +1327,7 @@ test_recv_vector_basic(void)
 	send_start(&ctx, bus, c1, 3);
 	coro_yield();
 	unit_assert(ctx.is_started && !ctx.is_done);
-	unsigned data4[4] = {0};
+	unsigned data4[4] = { 0 };
 	unit_assert(coro_bus_recv_v(bus, c1, data4, 4) == 2);
 	unit_assert(data4[0] == 1 && data4[1] == 2);
 	unit_assert(send_join(&ctx) == 0);
@@ -1362,21 +1362,21 @@ test_recv_vector_basic(void)
 
 #if NEED_BATCH
 struct ctx_recv_v {
-	struct coro_bus *bus;
+	struct coro_bus* bus;
 	int channel;
-	unsigned *data;
+	unsigned* data;
 	unsigned count;
 	int rc;
 	enum coro_bus_error_code err;
 	bool is_started;
 	bool is_done;
-	struct coro *worker;
+	struct coro* worker;
 };
 
-static void *
-recv_v_f(void *arg)
+static void*
+recv_v_f(void* arg)
 {
-	struct ctx_recv_v *ctx = arg;
+	struct ctx_recv_v* ctx = arg;
 	ctx->is_started = true;
 	ctx->rc = coro_bus_recv_v(ctx->bus, ctx->channel, ctx->data,
 		ctx->count);
@@ -1386,8 +1386,8 @@ recv_v_f(void *arg)
 }
 
 static void
-recv_v_start(struct ctx_recv_v *ctx, struct coro_bus *bus, int channel,
-	unsigned *data, unsigned count)
+recv_v_start(struct ctx_recv_v* ctx, struct coro_bus* bus, int channel,
+	unsigned* data, unsigned count)
 {
 	ctx->bus = bus;
 	ctx->channel = channel;
@@ -1401,7 +1401,7 @@ recv_v_start(struct ctx_recv_v *ctx, struct coro_bus *bus, int channel,
 }
 
 static int
-recv_v_join(struct ctx_recv_v *ctx)
+recv_v_join(struct ctx_recv_v* ctx)
 {
 	unit_assert(coro_join(ctx->worker) == NULL);
 	unit_assert(ctx->is_done);
@@ -1415,12 +1415,12 @@ test_recv_vector_blocking(void)
 {
 #if NEED_BATCH
 	unit_test_start();
-	struct coro_bus *bus = coro_bus_new();
+	struct coro_bus* bus = coro_bus_new();
 	int c1 = coro_bus_channel_open(bus, 10);
 	unit_assert(c1 >= 0);
 
 	unit_msg("start a blocking recv-v");
-	unsigned data4[4] = {0};
+	unsigned data4[4] = { 0 };
 	struct ctx_recv_v ctx;
 	recv_v_start(&ctx, bus, c1, data4, 4);
 	coro_yield();
@@ -1452,10 +1452,10 @@ test_recv_vector_blocking(void)
 ////////////////////////////////////////////////////////////////////////////////
 
 #if NEED_BATCH
-static void *
-recv_v_all_f(void *arg)
+static void*
+recv_v_all_f(void* arg)
 {
-	struct ctx_recv_v *ctx = arg;
+	struct ctx_recv_v* ctx = arg;
 	ctx->is_started = true;
 	while (ctx->count > 0) {
 		int rc = coro_bus_recv_v(ctx->bus, ctx->channel, ctx->data,
@@ -1474,8 +1474,8 @@ recv_v_all_f(void *arg)
 }
 
 static void
-recv_v_all_start(struct ctx_recv_v *ctx, struct coro_bus *bus, int channel,
-	unsigned *data, unsigned count)
+recv_v_all_start(struct ctx_recv_v* ctx, struct coro_bus* bus, int channel,
+	unsigned* data, unsigned count)
 {
 	ctx->bus = bus;
 	ctx->channel = channel;
@@ -1494,7 +1494,7 @@ test_recv_vector_blocking_recv_many(void)
 {
 #if NEED_BATCH
 	unit_test_start();
-	struct coro_bus *bus = coro_bus_new();
+	struct coro_bus* bus = coro_bus_new();
 	const unsigned limit = 3;
 	int c1 = coro_bus_channel_open(bus, limit);
 	unit_assert(c1 >= 0);
@@ -1503,11 +1503,11 @@ test_recv_vector_blocking_recv_many(void)
 	struct ctx_recv_v ctx[coro_count];
 	const unsigned data_per_coro = 100;
 	const unsigned data_count = coro_count * data_per_coro;
-	unsigned *data = calloc(data_count, sizeof(*data));
+	unsigned* data = calloc(data_count, sizeof(*data));
 
 	unit_msg("start many coros");
 	for (unsigned i = 0; i < coro_count; ++i) {
-		unsigned *data_begin = data + i * data_per_coro;
+		unsigned* data_begin = data + i * data_per_coro;
 		recv_v_all_start(&ctx[i], bus, c1, data_begin, data_per_coro);
 	}
 
@@ -1530,7 +1530,7 @@ test_recv_vector_blocking_recv_many(void)
 	}
 
 	unit_msg("check that nothing is lost");
-	bool *results = calloc(data_count, sizeof(*results));
+	bool* results = calloc(data_count, sizeof(*results));
 	for (unsigned i = 0; i < data_count; ++i) {
 		unit_assert(!results[data[i]]);
 		results[data[i]] = true;
@@ -1546,8 +1546,8 @@ test_recv_vector_blocking_recv_many(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static void *
-coro_main_f(void *arg)
+static void*
+coro_main_f(void* arg)
 {
 	(void)arg;
 	test_basic();
@@ -1581,7 +1581,7 @@ coro_main_f(void *arg)
 }
 
 int
-main(int argc, char **argv)
+main(int argc, char** argv)
 {
 	if (doCmdMaxPoints(argc, argv)) {
 		int result = 15;
@@ -1595,9 +1595,9 @@ main(int argc, char **argv)
 		return 0;
 	}
 	coro_sched_init();
-	struct coro *main_coro = coro_new(coro_main_f, NULL);
+	struct coro* main_coro = coro_new(coro_main_f, NULL);
 	coro_sched_run();
-	void *rc = coro_join(main_coro);
+	void* rc = coro_join(main_coro);
 	unit_check(rc == NULL, "main coro rc");
 	coro_sched_destroy();
 	return 0;
