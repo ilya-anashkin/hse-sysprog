@@ -3,7 +3,7 @@
 #include <stdbool.h>
 
 struct coro;
-typedef void *(*coro_f)(void *);
+typedef void* (*coro_f)(void*);
 
 /** Initialize the coroutines engine. */
 void
@@ -24,8 +24,8 @@ void
 coro_sched_destroy(void);
 
 /** Get the currently working coroutine. */
-struct coro *
-coro_this(void);
+struct coro*
+    coro_this(void);
 
 /**
  * Create a new coroutine. The function won't yield. The coroutine
@@ -35,16 +35,16 @@ coro_this(void);
  * Whatever the callback function returns, will be returned from
  * coro_join().
  */
-struct coro *
-coro_new(coro_f func, void *func_arg);
+struct coro*
+    coro_new(coro_f func, void* func_arg);
 
 /**
  * Join a coroutine. When joined, its resources are freed, and the
  * result of its callback function is returned. Each coroutine
  * must be joined. Otherwise it leaks.
  */
-void *
-coro_join(struct coro *coro);
+void*
+coro_join(struct coro* coro);
 
 /**
  * Pause the current coroutine until its explicitly woken up with
@@ -68,4 +68,4 @@ coro_yield(void);
  * this function is a nop.
  */
 void
-coro_wakeup(struct coro *coro);
+coro_wakeup(struct coro* coro);

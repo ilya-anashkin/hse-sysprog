@@ -27,11 +27,11 @@ struct coro {
 	/** Coroutine state. */
 	enum coro_state state;
 	/** A value, returned by func. */
-	void *ret;
+	void* ret;
 	/** Stack, used by the coroutine. */
-	void *stack;
+	void* stack;
 	/** An argument for the function func. */
-	void *func_arg;
+	void* func_arg;
 	/** A function to call as a coroutine. */
 	coro_f func;
 	/** Last remembered coroutine context. */
@@ -39,7 +39,7 @@ struct coro {
 	/**
 	 * Coroutine which is trying to join this one right now.
 	 */
-	struct coro *joiner;
+	struct coro* joiner;
 	/** Links in a coroutine list, used by the scheduler. */
 	struct rlist link;
 };
@@ -51,7 +51,7 @@ struct coro_engine {
 	 */
 	struct coro sched;
 	/** Which coroutine works at this moment. */
-	struct coro *this;
+	struct coro* this;
 
 	/**
 	 * Coroutines to run in this iteration of the loop. The
@@ -77,7 +77,7 @@ struct coro_engine {
 };
 
 static void
-coro_engine_create(struct coro_engine *engine)
+coro_engine_create(struct coro_engine* engine)
 {
 	memset(engine, 0, sizeof(*engine));
 	rlist_create(&engine->sched.link);
@@ -87,12 +87,12 @@ coro_engine_create(struct coro_engine *engine)
 }
 
 static void
-coro_engine_resume_next(struct coro_engine *engine)
+coro_engine_resume_next(struct coro_engine* engine)
 {
 	assert(!rlist_empty(&engine->coros_running_now));
-	struct coro *to = rlist_shift_entry(&engine->coros_running_now,
+	struct coro* to = rlist_shift_entry(&engine->coros_running_now,
 		struct coro, link);
-	struct coro *from = engine->this;
+	struct coro* from = engine->this;
 	assert(from != NULL);
 
 	engine->this = NULL;
@@ -104,9 +104,9 @@ coro_engine_resume_next(struct coro_engine *engine)
 }
 
 static void
-coro_engine_suspend(struct coro_engine *engine)
+coro_engine_suspend(struct coro_engine* engine)
 {
-	struct coro *this = engine->this;
+	struct coro* this = engine->this;
 	if (this == NULL) {
 		printf("Error: deadlock - suspension with no active "
 			"coroutines\n");
@@ -119,9 +119,9 @@ coro_engine_suspend(struct coro_engine *engine)
 }
 
 static void
-coro_engine_yield(struct coro_engine *engine)
+coro_engine_yield(struct coro_engine* engine)
 {
-	struct coro *this = engine->this;
+	struct coro* this = engine->this;
 	assert(rlist_empty(&this->link));
 	assert(this->state == CORO_STATE_RUNNING);
 	rlist_add_tail_entry(&engine->coros_running_next, this, link);
@@ -129,7 +129,7 @@ coro_engine_yield(struct coro_engine *engine)
 }
 
 static void
-coro_engine_wakeup(struct coro_engine *engine, struct coro *coro)
+coro_engine_wakeup(struct coro_engine* engine, struct coro* coro)
 {
 	if (coro->state == CORO_STATE_RUNNING)
 		return;
@@ -142,7 +142,7 @@ coro_engine_wakeup(struct coro_engine *engine, struct coro *coro)
 }
 
 static void
-coro_engine_run(struct coro_engine *engine)
+coro_engine_run(struct coro_engine* engine)
 {
 	while (true) {
 		assert(rlist_empty(&engine->coros_running_now));
@@ -169,13 +169,13 @@ coro_engine_run(struct coro_engine *engine)
 }
 
 static void
-coro_engine_destroy(struct coro_engine *engine)
+coro_engine_destroy(struct coro_engine* engine)
 {
 	assert(engine->this == NULL);
 	assert(rlist_empty(&engine->coros_running_now));
 	assert(rlist_empty(&engine->coros_running_next));
 	while (!rlist_empty(&engine->coros_pool)) {
-		struct coro *c = rlist_shift_entry(&engine->coros_pool,
+		struct coro* c = rlist_shift_entry(&engine->coros_pool,
 			struct coro, link);
 		free(c->stack);
 		free(c);
@@ -186,7 +186,7 @@ coro_engine_destroy(struct coro_engine *engine)
 	memset(engine, '#', sizeof(*engine));
 }
 
-static __thread struct coro_engine *new_coro_engine = NULL;
+static __thread struct coro_engine* new_coro_engine = NULL;
 
 /**
  * The core part of the coroutines creation - this signal handler
@@ -198,10 +198,10 @@ static void
 coro_body(int signum)
 {
 	(void)signum;
-	struct coro_engine *my_engine = new_coro_engine;
+	struct coro_engine* my_engine = new_coro_engine;
 	new_coro_engine = NULL;
 
-	struct coro *c = my_engine->this;
+	struct coro* c = my_engine->this;
 	my_engine->this = NULL;
 	/*
 	 * On invocation jump back to the constructor right after
@@ -231,10 +231,10 @@ coro_body(int signum)
 	}
 }
 
-static struct coro *
-coro_engine_spawn_new(struct coro_engine *engine, coro_f func, void *func_arg)
+static struct coro*
+coro_engine_spawn_new(struct coro_engine* engine, coro_f func, void* func_arg)
 {
-	struct coro *c = malloc(sizeof(*c));
+	struct coro* c = malloc(sizeof(*c));
 	c->state = CORO_STATE_RUNNING;
 	c->ret = NULL;
 	int stack_size = 1024 * 1024;
@@ -276,7 +276,7 @@ coro_engine_spawn_new(struct coro_engine *engine, coro_f func, void *func_arg)
 	/* Jump onto the stack and remember its position. */
 	assert(new_coro_engine == NULL);
 	new_coro_engine = engine;
-	struct coro *old_this = engine->this;
+	struct coro* old_this = engine->this;
 	engine->this = c;
 	sigemptyset(&suss);
 	if (sigsetjmp(engine->start_point, 1) == 0) {
@@ -299,7 +299,7 @@ coro_engine_spawn_new(struct coro_engine *engine, coro_f func, void *func_arg)
 	if (sigaltstack(&newst, NULL) != 0)
 		handle_error();
 	if ((oldst.ss_flags & SS_DISABLE) == 0 &&
-	    sigaltstack(&oldst, NULL) != 0)
+		sigaltstack(&oldst, NULL) != 0)
 		handle_error();
 	if (sigaction(SIGUSR2, &oldsa, NULL) != 0)
 		handle_error();
@@ -313,13 +313,13 @@ coro_engine_spawn_new(struct coro_engine *engine, coro_f func, void *func_arg)
 	return c;
 }
 
-static struct coro *
-coro_engine_spawn(struct coro_engine *engine, coro_f func, void *func_arg)
+static struct coro*
+coro_engine_spawn(struct coro_engine* engine, coro_f func, void* func_arg)
 {
 	if (rlist_empty(&engine->coros_pool))
 		return coro_engine_spawn_new(engine, func, func_arg);
 
-	struct coro *c = rlist_shift_entry(&engine->coros_pool,
+	struct coro* c = rlist_shift_entry(&engine->coros_pool,
 		struct coro, link);
 	c->func = func;
 	c->func_arg = func_arg;
@@ -329,8 +329,8 @@ coro_engine_spawn(struct coro_engine *engine, coro_f func, void *func_arg)
 	return c;
 }
 
-static void *
-coro_engine_join(struct coro_engine *engine, struct coro *coro)
+static void*
+coro_engine_join(struct coro_engine* engine, struct coro* coro)
 {
 	assert(coro->joiner == NULL);
 	coro->joiner = engine->this;
@@ -340,7 +340,7 @@ coro_engine_join(struct coro_engine *engine, struct coro *coro)
 	assert(coro->state == CORO_STATE_FINISHED);
 	assert(coro->joiner == engine->this);
 	coro->joiner = NULL;
-	void *ret = coro->ret;
+	void* ret = coro->ret;
 	coro->ret = NULL;
 	assert(rlist_empty(&coro->link));
 	rlist_add_entry(&engine->coros_pool, coro, link);
@@ -369,20 +369,20 @@ coro_sched_destroy(void)
 	coro_engine_destroy(&glob_engine);
 }
 
-struct coro *
-coro_this(void)
+struct coro*
+	coro_this(void)
 {
 	return glob_engine.this;
 }
 
-struct coro *
-coro_new(coro_f func, void *func_arg)
+struct coro*
+	coro_new(coro_f func, void* func_arg)
 {
 	return coro_engine_spawn(&glob_engine, func, func_arg);
 }
 
-void *
-coro_join(struct coro *coro)
+void*
+coro_join(struct coro* coro)
 {
 	return coro_engine_join(&glob_engine, coro);
 }
@@ -400,7 +400,7 @@ coro_yield(void)
 }
 
 void
-coro_wakeup(struct coro *coro)
+coro_wakeup(struct coro* coro)
 {
 	coro_engine_wakeup(&glob_engine, coro);
 }

@@ -16,15 +16,15 @@ filtered out at the process exit time.
 
 There are modes which allow to get more or less info:
 
-* `./my_app` - run your app with the default heap help mode;
+- `./my_app` - run your app with the default heap help mode;
 
-* `HHREPORT=l ./my_app` - l = "leaks", the default mode. If there are no leaks,
+- `HHREPORT=l ./my_app` - l = "leaks", the default mode. If there are no leaks,
   then nothing is printed at exit. Otherwise the leaks are printed to stdout
   (not all of them if there are too many) with their sizes and stack traces;
 
-* `HHREPORT=q ./my_app` - q = "quiet", nothing is printed.
+- `HHREPORT=q ./my_app` - q = "quiet", nothing is printed.
 
-* `HHREPORT=v ./my_app` - v = "verbose", either the leaks are printed like with
+- `HHREPORT=v ./my_app` - v = "verbose", either the leaks are printed like with
   the mode "l", or is printed a message saying that "there are no leaks". The
   mode helps to check if the heap help is working at all.
 
@@ -32,7 +32,7 @@ The tool also can help to detect usage of invalid memory. For that it can fill
 the newly allocated memory to increase the chances to get a crash and fine the
 buggy place.
 
-* `HHCONTENT=o ./my_app` - o = "original", memory is returned raw as is.
+- `HHCONTENT=o ./my_app` - o = "original", memory is returned raw as is.
 
-* `HHCONTENT=t ./my_app` - t = "trash", new memory will be filled with some
+- `HHCONTENT=t ./my_app` - t = "trash", new memory will be filled with some
   trash bytes.
