@@ -9,26 +9,26 @@
  * FS is a monolithic flat contiguous folder.
  */
 
-/**
- * Here you should specify which features do you want to implement
- * via macros: NEED_OPEN_FLAGS and NEED_RESIZE. If you want to
- * allow advanced flags, do this here:
- *
- *     #define NEED_OPEN_FLAGS 1
- *
- * To allow resize() functions define this:
- *
- *     #define NEED_RESIZE 1
- *
- * It is important to define these macros here, in the header,
- * because it is used by tests.
- */
-#define NEED_OPEN_FLAGS 0
-#define NEED_RESIZE 0
+ /**
+  * Here you should specify which features do you want to implement
+  * via macros: NEED_OPEN_FLAGS and NEED_RESIZE. If you want to
+  * allow advanced flags, do this here:
+  *
+  *     #define NEED_OPEN_FLAGS 1
+  *
+  * To allow resize() functions define this:
+  *
+  *     #define NEED_RESIZE 1
+  *
+  * It is important to define these macros here, in the header,
+  * because it is used by tests.
+  */
+#define NEED_OPEN_FLAGS 1
+#define NEED_RESIZE 1
 
-/**
- * Flags for ufs_open call.
- */
+  /**
+   * Flags for ufs_open call.
+   */
 enum open_flags {
 	/**
 	 * If the flag specified and a file does not exist -
@@ -71,7 +71,7 @@ enum ufs_error_code {
 
 /** Get code of the last error. */
 enum ufs_error_code
-ufs_errno();
+	ufs_errno();
 
 /**
  * Open a file by filename.
@@ -84,7 +84,7 @@ ufs_errno();
  *       not specified.
  */
 int
-ufs_open(const char *filename, int flags);
+ufs_open(const char* filename, int flags);
 
 /**
  * Write data to the file.
@@ -98,7 +98,7 @@ ufs_open(const char *filename, int flags);
  *     - UFS_ERR_NO_MEM - not enough memory.
  */
 ssize_t
-ufs_write(int fd, const char *buf, size_t size);
+ufs_write(int fd, const char* buf, size_t size);
 
 /**
  * Read data from the file.
@@ -112,7 +112,7 @@ ufs_write(int fd, const char *buf, size_t size);
  *     - UFS_ERR_NO_FILE - invalid file descriptor.
  */
 ssize_t
-ufs_read(int fd, char *buf, size_t size);
+ufs_read(int fd, char* buf, size_t size);
 
 /**
  * Close a file.
@@ -137,7 +137,7 @@ ufs_close(int fd);
  *     - UFS_ERR_NO_FILE - no such file.
  */
 int
-ufs_delete(const char *filename);
+ufs_delete(const char* filename);
 
 #if NEED_RESIZE
 
