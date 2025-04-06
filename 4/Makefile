@@ -5,6 +5,10 @@ all: test
 test:
 	gcc $(GCC_FLAGS) thread_pool.c test.c ../utils/unit.c -I ../utils -o test
 
+hh:
+	gcc $(GCC_FLAGS) thread_pool.c test.c ../utils/unit.c ../utils/heap_help/heap_help.c \
+		-I ../utils -ldl -rdynamic -o test
+
 # For automatic testing systems to be able to just build whatever was submitted
 # by a student.
 test_glob:
