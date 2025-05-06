@@ -8,12 +8,10 @@ struct chat_client;
  * Create a new chat client. No bind, no listen, just allocate and
  * initialize it.
  */
-struct chat_client *
-chat_client_new(const char *name);
+struct chat_client *chat_client_new(const char *name);
 
 /** Free all client's resources. */
-void
-chat_client_delete(struct chat_client *client);
+void chat_client_delete(struct chat_client *client);
 
 /**
  * Try to connect to the given address.
@@ -28,8 +26,7 @@ chat_client_delete(struct chat_client *client);
  *     - CHAT_ERR_NO_ADDR - the addr couldn't be resolved to any IP.
  *     - CHAT_ERR_SYS - a system error, check errno.
  */
-int
-chat_client_connect(struct chat_client *client, const char *addr);
+int chat_client_connect(struct chat_client *client, const char *addr);
 
 /**
  * Pop a next pending chat message. The returned message has to be
@@ -40,8 +37,7 @@ chat_client_connect(struct chat_client *client, const char *addr);
  * @retval not-NULL A message.
  * @retval NULL No more messages yet.
  */
-struct chat_message *
-chat_client_pop_next(struct chat_client *client);
+struct chat_message *chat_client_pop_next(struct chat_client *client);
 
 /**
  * Wait for any update for the given timeout and do this update.
@@ -55,8 +51,7 @@ chat_client_pop_next(struct chat_client *client);
  *     - CHAT_ERR_NOT_STARTED - the client is not connected yet.
  *     - CHAT_ERR_SYS - a system error, check errno.
  */
-int
-chat_client_update(struct chat_client *client, double timeout);
+int chat_client_update(struct chat_client *client, double timeout);
 
 /**
  * Get client's descriptor suitable for event loops like poll/epoll/kqueue. This
@@ -66,8 +61,7 @@ chat_client_update(struct chat_client *client, double timeout);
  * @retval >=0 A valid descriptor.
  * @retval -1 No descriptor.
  */
-int
-chat_client_get_descriptor(const struct chat_client *client);
+int chat_client_get_descriptor(const struct chat_client *client);
 
 /**
  * Get a mask of chat_event values wanted by the client. Needed together with
@@ -76,8 +70,7 @@ chat_client_get_descriptor(const struct chat_client *client);
  * @retval !=0 Event mask to wait for.
  * @retval 0 No events.
  */
-int
-chat_client_get_events(const struct chat_client *client);
+int chat_client_get_events(const struct chat_client *client);
 
 /**
  * Feed a message to the client.
@@ -90,6 +83,5 @@ chat_client_get_events(const struct chat_client *client);
  * @retval !=0 Error code.
  *     - CHAT_ERR_NOT_STARTED - the client is not connected yet.
  */
-int
-chat_client_feed(struct chat_client *client, const char *msg,
-		 uint32_t msg_size);
+int chat_client_feed(struct chat_client *client, const char *msg,
+                     uint32_t msg_size);
