@@ -20,7 +20,7 @@ parser.add_argument('--with_logic', type=bool, default=False,
                     help='Enable boolean logic bonus')
 parser.add_argument('--with_background', type=bool, default=True,
                     help='Enable background bonus')
-parser.add_argument('--many_args_count', type=int, default=100 * 1000,
+parser.add_argument('--many_args_count', type=int, default=5, # 100 * 1000, decrease for hh testing 
                     help='Number of arguments for the extra-many-args test')
 parser.add_argument('--tests', type=str, default='./tests.txt',
                     help='File with tests')

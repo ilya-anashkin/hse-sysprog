@@ -17,42 +17,42 @@ struct background_jobs {
 	int count;
 };
 
-[[maybe_unused]] static void debug_command_line(const struct command_line* line)
-{
-	assert(line != NULL);
-	printf("================================\n");
-	printf("Command line:\n");
-	printf("Is background: %d\n", (int)line->is_background);
-	printf("Output: ");
-	if (line->out_type == OUTPUT_TYPE_STDOUT) {
-		printf("stdout\n");
-	} else if (line->out_type == OUTPUT_TYPE_FILE_NEW) {
-		printf("new file - \"%s\"\n", line->out_file);
-	} else if (line->out_type == OUTPUT_TYPE_FILE_APPEND) {
-		printf("append file - \"%s\"\n", line->out_file);
-	} else {
-		assert(false);
-	}
-	printf("Expressions:\n");
-	const struct expr* e = line->head;
-	while (e != NULL) {
-		if (e->type == EXPR_TYPE_COMMAND) {
-			printf("\tCommand: %s", e->cmd.exe);
-			for (uint32_t i = 0; i < e->cmd.arg_count; ++i)
-				printf(" %s", e->cmd.args[i]);
-			printf("\n");
-		} else if (e->type == EXPR_TYPE_PIPE) {
-			printf("\tPIPE\n");
-		} else if (e->type == EXPR_TYPE_AND) {
-			printf("\tAND\n");
-		} else if (e->type == EXPR_TYPE_OR) {
-			printf("\tOR\n");
-		} else {
-			assert(false);
-		}
-		e = e->next;
-	}
-}
+// static void debug_command_line(const struct command_line* line)
+// {
+// 	assert(line != NULL);
+// 	printf("================================\n");
+// 	printf("Command line:\n");
+// 	printf("Is background: %d\n", (int)line->is_background);
+// 	printf("Output: ");
+// 	if (line->out_type == OUTPUT_TYPE_STDOUT) {
+// 		printf("stdout\n");
+// 	} else if (line->out_type == OUTPUT_TYPE_FILE_NEW) {
+// 		printf("new file - \"%s\"\n", line->out_file);
+// 	} else if (line->out_type == OUTPUT_TYPE_FILE_APPEND) {
+// 		printf("append file - \"%s\"\n", line->out_file);
+// 	} else {
+// 		assert(false);
+// 	}
+// 	printf("Expressions:\n");
+// 	const struct expr* e = line->head;
+// 	while (e != NULL) {
+// 		if (e->type == EXPR_TYPE_COMMAND) {
+// 			printf("\tCommand: %s", e->cmd.exe);
+// 			for (uint32_t i = 0; i < e->cmd.arg_count; ++i)
+// 				printf(" %s", e->cmd.args[i]);
+// 			printf("\n");
+// 		} else if (e->type == EXPR_TYPE_PIPE) {
+// 			printf("\tPIPE\n");
+// 		} else if (e->type == EXPR_TYPE_AND) {
+// 			printf("\tAND\n");
+// 		} else if (e->type == EXPR_TYPE_OR) {
+// 			printf("\tOR\n");
+// 		} else {
+// 			assert(false);
+// 		}
+// 		e = e->next;
+// 	}
+// }
 
 static void check_background_processes(struct background_jobs* bg_jobs) {
 	for (int i = 0; i < bg_jobs->count; i++) {
@@ -82,7 +82,7 @@ static char** build_command_args(const struct expr* e) {
 	return args;
 }
 
-static void execute_command_line(const struct command_line* line, int* exit_code, struct background_jobs* bg_jobs) {
+static void execute_command_line(const struct command_line* line, int* exit_code, bool* need_exit, struct background_jobs* bg_jobs) {
 	assert(line != NULL);
 
 	// debug_command_line(line);
@@ -103,13 +103,15 @@ static void execute_command_line(const struct command_line* line, int* exit_code
 		int use_pipe = (e->next != NULL);
 		if (use_pipe && pipe(pipe_fd) == -1) {
 			perror("pipe");
-			exit(EXIT_FAILURE);
+			*exit_code = EXIT_FAILURE;
+			return;
 		}
 
 		pid_t pid = fork();
 		if (pid == -1) {
 			perror("fork");
-			exit(EXIT_FAILURE);
+			*exit_code = EXIT_FAILURE;
+			return;
 		}
 
 		if (pid == 0) {
@@ -126,7 +128,8 @@ static void execute_command_line(const struct command_line* line, int* exit_code
 				int output_fd = open(line->out_file, flags, 0644);
 				if (output_fd == -1) {
 					perror("open");
-					exit(EXIT_FAILURE);
+					*exit_code = EXIT_FAILURE;
+					return;
 				}
 				dup2(output_fd, STDOUT_FILENO);
 				close(output_fd);
@@ -137,14 +140,17 @@ static void execute_command_line(const struct command_line* line, int* exit_code
 
 			if (strcmp(e->cmd.exe, "exit") == 0) {
 				int code = (e->cmd.arg_count > 0) ? atoi(e->cmd.args[0]) : 0;
-				exit(code);
+				*exit_code = code;
+				*need_exit = true;
+				return;
 			}
 
 			char** args = build_command_args(e);
 			execvp(args[0], args);
 			perror("execvp");
 			free(args);
-			exit(EXIT_FAILURE);
+			*exit_code = EXIT_FAILURE;
+			return;
 		} else {
 			if (line->is_background) {
 				if (bg_jobs->count < MAX_BG_PROCESSES) {
@@ -184,6 +190,7 @@ int main(void) {
 	int rc;
 	struct parser* p = parser_new();
 	int exit_code = 0;
+	bool need_exit = false;
 	struct background_jobs bg_jobs = { .count = 0 };
 
 	while ((rc = read(STDIN_FILENO, buf, BUF_SIZE)) > 0) {
@@ -216,13 +223,18 @@ int main(void) {
 					exit_code = (first_cmd->arg_count > 0) ? atoi(first_cmd->args[0]) : 0;
 					command_line_delete(line);
 					parser_delete(p);
-					exit(exit_code);
+					check_background_processes(&bg_jobs);
+					return exit_code;
 				}
 			}
 
-			execute_command_line(line, &exit_code, &bg_jobs);
+			execute_command_line(line, &exit_code, &need_exit, &bg_jobs);
 			command_line_delete(line);
 			check_background_processes(&bg_jobs);
+			if (need_exit) {
+				parser_delete(p);
+				return exit_code;
+			}
 		}
 	}
 

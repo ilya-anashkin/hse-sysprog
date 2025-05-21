@@ -1,10 +1,12 @@
 GCC_FLAGS = -Wextra -Werror -Wall -Wno-gnu-folding-constant
 
 all:
-	gcc $(GCC_FLAGS) solution.c parser.c -o mybash
+# use a.out for testing checker
+	gcc $(GCC_FLAGS) solution.c parser.c -o a.out
 
 hh:
-	gcc $(GCC_FLAGS) solution.c parser.c ../utils/heap_help/heap_help.c -ldl -rdynamic -o mybash
+# use a.out for testing checker
+	gcc $(GCC_FLAGS) solution.c parser.c ../utils/heap_help/heap_help.c -ldl -rdynamic -o a.out
 
 # For automatic testing systems to be able to just build whatever was submitted
 # by a student.
