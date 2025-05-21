@@ -16,7 +16,7 @@ points = 15
 parser = argparse.ArgumentParser(description='Tests for shell')
 parser.add_argument('-e', type=str, default='./a.out',
                     help='executable shell file')
-parser.add_argument('--with_logic', type=bool, default=False,
+parser.add_argument('--with_logic', type=bool, default=True,
                     help='Enable boolean logic bonus')
 parser.add_argument('--with_background', type=bool, default=True,
                     help='Enable background bonus')
