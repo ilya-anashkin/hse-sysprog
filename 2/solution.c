@@ -10,21 +10,67 @@
 #include "parser.h"
 
 #define BUF_SIZE 1024
-#define MAX_BG_PROCESSES 128
+#define BASE_CAPACITY 8
+#define CAPACITY_MULTIPLIER 2
 
 struct background_jobs {
-  pid_t pids[MAX_BG_PROCESSES];
+  pid_t* pids;
   int count;
+  int capacity;
 };
 
+static void background_jobs_init(struct background_jobs* bg_jobs) {
+  bg_jobs->pids = NULL;
+  bg_jobs->count = 0;
+  bg_jobs->capacity = 0;
+}
+
+static void background_jobs_add(struct background_jobs* bg_jobs, pid_t pid) {
+  if (bg_jobs->count == bg_jobs->capacity) {
+    int new_capacity = bg_jobs->capacity
+                           ? bg_jobs->capacity * CAPACITY_MULTIPLIER
+                           : BASE_CAPACITY;
+    pid_t* new_pids = realloc(bg_jobs->pids, new_capacity * sizeof(pid_t));
+
+    if (!new_pids) {
+      perror("realloc");
+      exit(EXIT_FAILURE);
+    }
+
+    bg_jobs->pids = new_pids;
+    bg_jobs->capacity = new_capacity;
+  }
+
+  bg_jobs->pids[bg_jobs->count++] = pid;
+}
+
+static void background_jobs_remove(struct background_jobs* bg_jobs, int idx) {
+  if (idx < 0 || idx >= bg_jobs->count) {
+    return;
+  }
+
+  for (int i = idx; i < bg_jobs->count - 1; ++i) {
+    bg_jobs->pids[i] = bg_jobs->pids[i + 1];
+  }
+
+  bg_jobs->count--;
+}
+
+static void background_jobs_free(struct background_jobs* bg_jobs) {
+  free(bg_jobs->pids);
+  bg_jobs->pids = NULL;
+  bg_jobs->count = 0;
+  bg_jobs->capacity = 0;
+}
+
 static void check_background_processes(struct background_jobs* bg_jobs) {
-  for (int i = 0; i < bg_jobs->count; i++) {
-    if (bg_jobs->pids[i] > 0) {
-      int status;
-      pid_t result = waitpid(bg_jobs->pids[i], &status, WNOHANG);
-      if (result > 0) {
-        bg_jobs->pids[i] = 0;
-      }
+  for (int i = 0; i < bg_jobs->count;) {
+    int status;
+    pid_t result = waitpid(bg_jobs->pids[i], &status, WNOHANG);
+    if (result > 0) {
+      background_jobs_remove(bg_jobs, i);
+    } else {
+      ++i;
     }
   }
 }
@@ -65,8 +111,9 @@ static void execute_pipeline(const struct expr* start, const struct expr* end,
   int pipe_fd[2];
   int input_fd = STDIN_FILENO;
   const struct expr* e = start;
-  pid_t pids[BUF_SIZE];
+  pid_t* pids = NULL;
   int pid_count = 0;
+  int pid_capacity = 0;
   int last_status = 0;
 
   while (e != end) {
@@ -80,6 +127,7 @@ static void execute_pipeline(const struct expr* start, const struct expr* end,
     if (use_pipe && pipe(pipe_fd) == -1) {
       perror("pipe");
       *exit_code = EXIT_FAILURE;
+      free(pids);
       return;
     }
 
@@ -87,6 +135,7 @@ static void execute_pipeline(const struct expr* start, const struct expr* end,
     if (pid == -1) {
       perror("fork");
       *exit_code = EXIT_FAILURE;
+      free(pids);
       return;
     }
 
@@ -122,7 +171,7 @@ static void execute_pipeline(const struct expr* start, const struct expr* end,
         int code = (e->cmd.arg_count > 0) ? atoi(e->cmd.args[0]) : 0;
         *exit_code = code;
         *need_exit = true;
-        return;
+        _exit(code);
       }
 
       char** args = build_command_args(e);
@@ -132,12 +181,20 @@ static void execute_pipeline(const struct expr* start, const struct expr* end,
       exit(EXIT_FAILURE);
     } else {
       if (line->is_background) {
-        if (bg_jobs->count < MAX_BG_PROCESSES) {
-          bg_jobs->pids[bg_jobs->count++] = pid;
-        } else {
-          perror("Too many background processes");
-        }
+        background_jobs_add(bg_jobs, pid);
       } else {
+        if (pid_count == pid_capacity) {
+          int new_capacity =
+              pid_capacity ? pid_capacity * CAPACITY_MULTIPLIER : BASE_CAPACITY;
+          pid_t* new_pids = realloc(pids, new_capacity * sizeof(pid_t));
+          if (!new_pids) {
+            perror("realloc");
+            free(pids);
+            exit(EXIT_FAILURE);
+          }
+          pids = new_pids;
+          pid_capacity = new_capacity;
+        }
         pids[pid_count++] = pid;
       }
 
@@ -160,6 +217,7 @@ static void execute_pipeline(const struct expr* start, const struct expr* end,
       last_status = WEXITSTATUS(status);
     }
   }
+  free(pids);
 
   *exit_code = last_status;
 }
@@ -218,7 +276,8 @@ int main(void) {
   struct parser* p = parser_new();
   int exit_code = 0;
   bool need_exit = false;
-  struct background_jobs bg_jobs = {.count = 0};
+  struct background_jobs bg_jobs;
+  background_jobs_init(&bg_jobs);
 
   while ((rc = read(STDIN_FILENO, buf, BUF_SIZE)) > 0) {
     parser_feed(p, buf, rc);
@@ -251,6 +310,7 @@ int main(void) {
           command_line_delete(line);
           parser_delete(p);
           check_background_processes(&bg_jobs);
+          background_jobs_free(&bg_jobs);
           return exit_code;
         }
       }
@@ -259,12 +319,14 @@ int main(void) {
       command_line_delete(line);
       check_background_processes(&bg_jobs);
       if (need_exit) {
+        background_jobs_free(&bg_jobs);
         parser_delete(p);
         return exit_code;
       }
     }
   }
 
+  background_jobs_free(&bg_jobs);
   parser_delete(p);
   return exit_code;
 }
