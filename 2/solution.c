@@ -293,6 +293,7 @@ int main(void) {
 
       if (line->head && line->head->type == EXPR_TYPE_COMMAND) {
         struct command* first_cmd = &line->head->cmd;
+        struct expr* next = line->head->next;
 
         if (strcmp(first_cmd->exe, "cd") == 0) {
           if (first_cmd->arg_count > 0) {
@@ -305,7 +306,7 @@ int main(void) {
           command_line_delete(line);
           continue;
         } else if (strcmp(first_cmd->exe, "exit") == 0 &&
-                   line->head->next == NULL) {
+                   (!next || next->type != EXPR_TYPE_PIPE)) {
           exit_code = (first_cmd->arg_count > 0) ? atoi(first_cmd->args[0]) : 0;
           command_line_delete(line);
           parser_delete(p);
